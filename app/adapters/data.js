@@ -1,0 +1,1 @@
+export { default } from 'ember-cli-couchdb/adapters/data';
