@@ -5,7 +5,6 @@ export default DS.RESTAdapter.extend({
   primaryKey: '_id',
   defaultSerializer: 'data',
   updateHandler: null,
-  couchNamespace: null,
   
   acceptedKeys: ['reduce', 'key', 'startkey', 'endkey', 'keys', 'limit', 'skip', 'group_level', 'include_docs', 'descending'],
   
@@ -14,19 +13,20 @@ export default DS.RESTAdapter.extend({
   },
   
   buildURL: function(type, id, snapshot, query) {
-    var category, key, value, view;
-    var namespace = this.get('namespace') || '';
-    var couchNamespace = this.get('couchNamespace') || '';
+    let category, key, value, view;
+    let namespace = this.get('namespace') || '';
+    let host = this.get('host') || `${window.location.protocol}\/\/${window.location.host}`;
+    host = `${host}/${namespace}`;
 
     if (query && typeof(query) === 'object') {
       if(query.data && query.data.updateHandler){
-        return `${namespace}/${couchNamespace}/_update/${query.data.updateHandler}/${id}`;
+        return `${host}/_update/${query.data.updateHandler}/${id}`;
       }
       else if(!query.category && query.view){
         // all docs
         query.type = 'POST';
         //[todo] - for /_all_docs set the query object correctly
-        return `${namespace}/${couchNamespace}/_all_docs`;
+        return `${host}/_all_docs`;
       }
       else {
         // _view
@@ -57,14 +57,14 @@ export default DS.RESTAdapter.extend({
           delete query[key];
         }
         let viewUrl = this.getViewURL(category, view);
-        // return `${namespace}/${couchNamespace}/_view/${category}/${view}`;
-        return `${namespace}/${couchNamespace}/${viewUrl}`;
+        // return `${host}/_view/${category}/${view}`;
+        return `${host}/${viewUrl}`;
       }
     }  
     else if (id) {
-      return `${namespace}/${couchNamespace}/${id}`;
+      return `${host}/${id}`;
     } else {
-      return `${namespace}/${couchNamespace}`;
+      return `${host}`;
     }
   },
 
