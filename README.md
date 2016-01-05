@@ -1,4 +1,5 @@
 # Ember-cli-couchdb
+[![npm version](https://badge.fury.io/js/ember-cli-couchdb.svg)](https://badge.fury.io/js/ember-cli-couchdb)  [![Build Status](https://travis-ci.org/ArtooTrills/ember-cli-couchdb.svg?branch=master)](https://travis-ci.org/ArtooTrills/ember-cli-couchdb)
 
 This README outlines the details of collaborating on this Ember addon.
 

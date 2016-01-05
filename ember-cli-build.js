@@ -4,7 +4,11 @@ var EmberAddon = require('ember-cli/lib/broccoli/ember-addon');
 
 module.exports = function(defaults) {
   var app = new EmberAddon(defaults, {
-    // Add options here
+    // http://stackoverflow.com/a/32252058
+    babel: {
+      optional: ['es6.spec.symbols'],
+      includePolyfill: true
+    }
   });
 
   /*
