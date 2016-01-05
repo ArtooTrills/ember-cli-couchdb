@@ -15,5 +15,8 @@
   },
   "resolutions": {
     "qunit-notifications": "~0.1.0"
+  },
+  "devDependencies": {
+    "blanket": "~1.1.5"
   }
 }
