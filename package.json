@@ -1,7 +1,7 @@
 {
   "name": "ember-cli-couchdb",
   "version": "0.1.4",
-  "description": "Couchdb adapters for Ember.js",
+  "description": "Couchdb adapters for Ember.js app",
   "directories": {
     "doc": "doc",
     "test": "tests"
@@ -33,11 +33,13 @@
     "ember-cli-release": "0.2.8",
     "ember-cli-sri": "^1.2.0",
     "ember-cli-uglify": "^1.2.0",
+    "ember-cli-yuidoc": "0.8.3",
     "ember-data": "^1.0.0-beta.18",
     "ember-disable-prototype-extensions": "^1.0.0",
     "ember-disable-proxy-controllers": "^1.0.1",
     "ember-export-application-global": "^1.0.4",
-    "ember-try": "~0.0.8"
+    "ember-try": "~0.0.8",
+    "yuidoc-ember-cp-validations-theme": "git+https://git@github.com:offirgolan/yuidoc-ember-cp-validations-theme"
   },
   "keywords": [
     "ember-addon",

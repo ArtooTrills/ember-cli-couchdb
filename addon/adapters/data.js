@@ -1,6 +1,31 @@
 import Ember from 'ember';
 import DS from 'ember-data';
 
+/**
+ * @module Adapter
+ */
+
+/**
+ * The DataAdapter allows your store to communicate with the couchdb or any 
+ * proxy api which connects to couchdb.
+ * To use the adapter in your app, extend DataAdapter
+ * 
+ * ```js
+ * 	import DataAdapter from 'ember-cli-couchdb/adapters/data';
+ * 	
+ * 	export default DataAdapter.extend({  
+ * 	
+ * 	});
+ * ```
+ * 	
+ * and customize the namespace to point to the database name or proxy api namespace
+ * where data to be stored.
+ *
+ * @class DataAdapter
+ * @namespace ember-cli-couchdb
+ * @extends DS.RESTAdapter
+ */
+
 export default DS.RESTAdapter.extend({
   primaryKey: '_id',
   defaultSerializer: 'data',

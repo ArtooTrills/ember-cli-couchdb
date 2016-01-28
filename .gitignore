@@ -16,3 +16,8 @@
 npm-debug.log
 testem.log
 lcov.dat
+
+#Docs
+/docs
+/out
+/.publish

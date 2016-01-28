@@ -1,0 +1,20 @@
+{
+  "name": "ember-cli-couchdb",
+  "description": "Couchdb adapters for Ember.js app",
+  "version": "0.1.4",
+  "options": {
+    "paths": [
+      "addon",
+      "app"
+    ],
+    "themedir": "node_modules/yuidoc-ember-cp-validations-theme",
+    "helpers": ["node_modules/yuidoc-ember-cp-validations-theme/helpers/helpers.js"],
+    "exclude": "vendor",
+    "outdir": "docs",
+    "linkNatives": true,
+    "quiet": true,
+    "parseOnly": false,
+    "lint": false,
+    "nocode": false
+  }
+}
