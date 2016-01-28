@@ -1,6 +1,7 @@
 {
   "name": "ember-cli-couchdb",
   "description": "Couchdb adapters for Ember.js app",
+  "url": "https://github.com/ArtooTrills/ember-cli-couchdb",
   "version": "0.1.4",
   "options": {
     "paths": [

@@ -9,7 +9,9 @@
   "scripts": {
     "build": "ember build",
     "start": "ember server",
-    "test": "ember try:testall"
+    "test": "ember try:testall",
+    "docs": "ember ember-cli-yuidoc",
+    "deploy": "npm run docs && gulp deploy"
   },
   "repository": "",
   "engines": {
