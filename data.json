@@ -1,0 +1,80 @@
+{
+    "project": {
+        "name": "ember-cli-couchdb",
+        "description": "Couchdb adapters for Ember.js app",
+        "version": "0.1.4.60d2d37d"
+    },
+    "files": {
+        "addon/adapters/data.js": {
+            "name": "addon/adapters/data.js",
+            "modules": {
+                "Adapter": 1
+            },
+            "classes": {
+                "ember-cli-couchdb.DataAdapter": 1
+            },
+            "fors": {},
+            "namespaces": {
+                "ember-cli-couchdb": 1
+            }
+        },
+        "addon/index.js": {
+            "name": "addon/index.js",
+            "modules": {
+                "Home": 1
+            },
+            "classes": {},
+            "fors": {},
+            "namespaces": {}
+        }
+    },
+    "modules": {
+        "Adapter": {
+            "name": "Adapter",
+            "submodules": {},
+            "elements": {},
+            "classes": {
+                "ember-cli-couchdb.DataAdapter": 1
+            },
+            "fors": {},
+            "namespaces": {
+                "ember-cli-couchdb": 1
+            },
+            "tag": "module",
+            "file": "addon/adapters/data.js",
+            "line": 8
+        },
+        "Home": {
+            "name": "Home",
+            "submodules": {},
+            "elements": {},
+            "classes": {},
+            "fors": {},
+            "namespaces": {},
+            "tag": "module",
+            "file": "addon/index.js",
+            "line": 1,
+            "description": "`ember-cli-couchdb` provides two adpaters for store to connect with couchdb\n- DataAdapter\n\t\tdata adapter is to fetch and store the couchdb documents\n\t\t\n- ViewAdapter\n\t\tview adapter is to get data from couchdb design docs"
+        }
+    },
+    "classes": {
+        "ember-cli-couchdb.DataAdapter": {
+            "name": "ember-cli-couchdb.DataAdapter",
+            "shortname": "ember-cli-couchdb.DataAdapter",
+            "classitems": [],
+            "plugins": [],
+            "extensions": [],
+            "plugin_for": [],
+            "extension_for": [],
+            "module": "Adapter",
+            "namespace": "ember-cli-couchdb",
+            "file": "addon/adapters/data.js",
+            "line": 8,
+            "description": "The DataAdapter allows your store to communicate with the couchdb or any \nproxy api which connects to couchdb.\nTo use the adapter in your app, extend DataAdapter\n\n```js\n\timport DataAdapter from 'ember-cli-couchdb/adapters/data';\n\t\n\texport default DataAdapter.extend({  \n\t\n\t});\n```\n\t\nand customize the namespace to point to the database name or proxy api namespace\nwhere data to be stored.",
+            "extends": "DS.RESTAdapter"
+        }
+    },
+    "elements": {},
+    "classitems": [],
+    "warnings": []
+}

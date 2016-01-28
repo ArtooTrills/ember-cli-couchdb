@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>addon/adapters/data.js - ember-cli-couchdb</title>
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.9.1/build/cssgrids/cssgrids-min.css">
+    <link rel="stylesheet" href="../assets/vendor/prettify/prettify-min.css">
+    <link rel="stylesheet" href="../assets/css/main.css" id="site_styles">
+    <link rel="stylesheet" href="../assets/css/custom.css">
+    <link rel="stylesheet" href="../assets/vendor/bootstrap/css/bootstrap.css">
+    <link rel="stylesheet" href="../assets/css/theme.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,600,700' rel='stylesheet' type='text/css'>
+</head>
+<body>
+    <div class="row">
+        <div class="sidebar-container">
+            <div id="sidebar">
+              <div class="header">
+                <h1 class="brand" style="padding: 10px 16px 10px; height: 20px; line-height: 20px; margin-left: 0;">
+                  <a href="../">ember-cli-couchdb</a>
+                </h1>
+                <form class="navbar-form">
+                    <input type="search" class="search-query" placeholder="Search classes/modules...">
+                </form>
+              </div>
+              <ul class="main-nav">
+                <li class="section">Modules</li>
+                   <li  >
+                     <a href="../modules/Adapter.html">Adapter</a>
+                   </li>
+                   <li  >
+                     <a href="../modules/Home.html">Home</a>
+                   </li>
+            
+                <li class="section">Classes</li>
+                    <li ><a  href="../classes/ember-cli-couchdb.DataAdapter.html">ember-cli-couchdb.DataAdapter</a></li>
+              </ul>
+            
+              <div class="footer">
+                <a href="" class="github">GitHub</a>
+                <p class="version pull-right">0.1.4.60d2d37d</p>
+              </div>
+            </div>
+        </div>
+        <div class="content-container">
+            <div class="apidocs">
+                <div id="docs-main">
+                    <div class="content">
+                        <form id="options-form" class="form-inline pull-right">
+                            Show:
+                            <label for="api-show-inherited" class="checkbox">
+                                <input type="checkbox" id="api-show-inherited" checked>
+                                Inherited
+                            </label>
+                    
+                            <label for="api-show-protected" class="checkbox">
+                                <input type="checkbox" id="api-show-protected">
+                                Protected
+                            </label>
+                    
+                            <label for="api-show-private" class="checkbox">
+                                <input type="checkbox" id="api-show-private">
+                                Private
+                            </label>
+                            <label for="api-show-deprecated" class="checkbox">
+                                <input type="checkbox" id="api-show-deprecated">
+                                Deprecated
+                            </label>
+                    
+                        </form>
+                    
+<div class="page-header">
+    <h1>addon/adapters/data.js <small>File</small></h1>
+</div>
+
+<div class="file">
+    <pre class="prettyprint linenums">
+import Ember from &#x27;ember&#x27;;
+import DS from &#x27;ember-data&#x27;;
+
+/**
+ * @module Adapter
+ */
+
+/**
+ * The DataAdapter allows your store to communicate with the couchdb or any 
+ * proxy api which connects to couchdb.
+ * To use the adapter in your app, extend DataAdapter
+ * 
+ * &#x60;&#x60;&#x60;js
+ * 	import DataAdapter from &#x27;ember-cli-couchdb/adapters/data&#x27;;
+ * 	
+ * 	export default DataAdapter.extend({  
+ * 	
+ * 	});
+ * &#x60;&#x60;&#x60;
+ * 	
+ * and customize the namespace to point to the database name or proxy api namespace
+ * where data to be stored.
+ *
+ * @class DataAdapter
+ * @namespace ember-cli-couchdb
+ * @extends DS.RESTAdapter
+ */
+
+export default DS.RESTAdapter.extend({
+  primaryKey: &#x27;_id&#x27;,
+  defaultSerializer: &#x27;data&#x27;,
+  updateHandler: null,
+  
+  acceptedKeys: [&#x27;reduce&#x27;, &#x27;key&#x27;, &#x27;startkey&#x27;, &#x27;endkey&#x27;, &#x27;keys&#x27;, &#x27;limit&#x27;, &#x27;skip&#x27;, &#x27;group_level&#x27;, &#x27;include_docs&#x27;, &#x27;descending&#x27;],
+  
+  getViewURL: function (category, view) {
+    return &#x60;_design/${category}/_view/${view}&#x60;;
+  },
+  
+  buildURL: function(type, id, snapshot, query) {
+    let category, key, value, view;
+    let namespace = this.get(&#x27;namespace&#x27;) || &#x27;&#x27;;
+    let host = this.get(&#x27;host&#x27;) || &#x60;${window.location.protocol}\/\/${window.location.host}&#x60;;
+    host = &#x60;${host}/${namespace}&#x60;;
+
+    if (query &amp;&amp; typeof(query) === &#x27;object&#x27;) {
+      if(query.data &amp;&amp; query.data.updateHandler){
+        return &#x60;${host}/_update/${query.data.updateHandler}/${id}&#x60;;
+      }
+      else if(!query.category &amp;&amp; query.view){
+        // all docs
+        query.type = &#x27;POST&#x27;;
+        //[todo] - for /_all_docs set the query object correctly
+        return &#x60;${host}/_all_docs&#x60;;
+      }
+      else {
+        // _view
+        category = query.category;
+        view = query.view;
+        delete query.category;
+        delete query.view;
+        
+        // [todo] - handle query object formating of multiple startkey &amp; endkey pairs  
+        for (key in query) {
+          value = query[key];
+          if (key === &#x27;startkey&#x27; || key === &#x27;endkey&#x27;) {
+            if (typeof value === &#x27;object&#x27;) {
+              query[key] = JSON.stringify(value);
+            }
+          }
+        }
+
+        // Clean keys in query
+        let acceptedKeys = this.get(&#x27;acceptedKeys&#x27;) || [];
+        query.data = {};
+        for (key in query) {
+          value = query[key];
+          if(acceptedKeys.indexOf(key) &lt; 0) {
+            continue;
+          }
+          query.data[key] = query[key];
+          delete query[key];
+        }
+        let viewUrl = this.getViewURL(category, view);
+        // return &#x60;${host}/_view/${category}/${view}&#x60;;
+        return &#x60;${host}/${viewUrl}&#x60;;
+      }
+    }  
+    else if (id) {
+      return &#x60;${host}/${id}&#x60;;
+    } else {
+      return &#x60;${host}&#x60;;
+    }
+  },
+
+  findAll: function(store, type) {
+    return Ember.assert(&#x60;Please do not call find() for ${type.typeKey} instead pass keys or startkey &amp; endkey pair&#x60;, false);
+  },
+
+  findQuery: function(store, type, query) {
+    if (this.sortQueryParams) {
+      query = this.sortQueryParams(query);
+    }
+    var url = this.buildURL(type, null,null, query);
+    type = query.type || &#x27;GET&#x27;;
+    delete query.type;
+    return this.ajax(url, type, query);
+  },
+
+  createRecord: function(store, type, snapshot) {
+    var data = {};
+    var serializer = store.serializerFor(type.typeKey);
+    data = serializer.serialize(snapshot, { includeId: true });
+    
+    return this.ajax(this.buildURL(type.typeKey, null, snapshot), &#x27;POST&#x27;, function(json) {
+      Ember.assert(&#x27;Must contain ok key in save response&#x27;, json.ok);
+      delete json.ok;
+      Ember.assert(&#x27;Must contain id key in save response&#x27;, json.id);
+      Ember.assert(&#x27;Must contain rev key in save response&#x27;, json.rev);
+      data._rev = json.rev;
+      delete json.rev;
+      json = Ember.$.extend(data, json);
+      return json;
+    }, {
+      data: data
+    });
+  },
+
+  updateRecord: function(store, type, snapshot) {
+    var data = {};
+    var id = snapshot.get(&#x27;id&#x27;);
+    var serializer = store.serializerFor(type.typeKey);
+    data = serializer.serialize(snapshot, { includeId: true });
+
+    var query;
+    if (this.updateHandler) {
+      query = { data: { updateHandler: this.updateHandler }};
+    }
+    
+    return this.ajax(this.buildURL(type.typeKey, id, snapshot, query), &#x27;PUT&#x27;, function(json) {
+      Ember.assert(&#x27;Must contain ok key in save response&#x27;, json.ok);
+      delete json.ok;
+      Ember.assert(&#x27;Must contain id key in save response&#x27;, json.id);
+      Ember.assert(&#x27;Must contain rev key in save response&#x27;, json.rev);
+      data._rev = json.rev;
+      delete json.rev;
+      json = JSON.parse(JSON.stringify(Ember.$.extend(data, json)));
+      return json;
+    }, {
+      data: data
+    });
+  },
+
+  deleteRecord: function(store, type, snapshot) {
+    var data, id, serializer;
+    data = {};
+    serializer = store.serializerFor(type.typeKey);
+    serializer.serializeIntoHash(data, type, snapshot, {includeId: true});
+    data._deleted = true;
+    id = snapshot.get(&#x27;id&#x27;);
+
+    return this.ajax(this.buildURL(type.typeKey, id, snapshot), &#x27;PUT&#x27;, function(json) {
+      Ember.assert(&#x27;Must contain ok key in save response&#x27;, json.ok);
+      delete json.ok;
+      Ember.assert(&#x27;Must contain rev key in save response&#x27;, json.rev);
+      data._rev = json.rev;
+      delete json.rev;
+      json = Ember.$.extend(data, json);
+      return json;
+    }, {
+      data: data
+    });
+  },
+
+  ajax: function(url, type, normalizeResponse, hash) {
+    var adapter;
+    adapter = this;
+    if (normalizeResponse &amp;&amp; !hash) {
+      hash = normalizeResponse;
+      normalizeResponse = null;
+    }
+    return new Ember.RSVP.Promise(function(resolve, reject) {
+      hash = adapter.ajaxOptions(url, type, hash);
+      hash.success = function(json/*, textStatus, jqXHR*/) {
+        if (normalizeResponse &amp;&amp; Ember.typeOf(normalizeResponse) === &#x27;function&#x27;) {
+          json = normalizeResponse.call(adapter, json);
+        }
+        Ember.run(null, resolve, json);
+      };
+      hash.error = function(jqXHR, textStatus, errorThrown) {
+        Ember.run(null, reject, adapter.ajaxError(jqXHR, jqXHR.responseText, errorThrown));
+      };
+      return Ember.$.ajax(hash);
+    }, &#x60;DS: DataAdapter#ajax ${type} to ${url}&#x60;);
+  }
+
+});
+    </pre>
+</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="../assets/vendor/prettify/prettify-min.js"></script>
+    <script>prettyPrint();</script>
+    <script src="../assets/vendor/jquery/jquery-1.8.2.min.js"></script>
+    <script src="../assets/vendor/bootstrap/js/bootstrap.js"></script>
+    <script src="../assets/js/yuidoc-bootstrap.js"></script>
+</body>
+</html>
