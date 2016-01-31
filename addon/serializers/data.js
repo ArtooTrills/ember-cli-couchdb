@@ -215,7 +215,11 @@ function extractEmbeddedHasMany(serializer, store, key, embeddedType, hash) {
   forEach(hash[key], function(data) {
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
-    store.push(embeddedType, embeddedRecord);
+    try {
+      store.push(embeddedType, embeddedRecord);
+    } catch (e) {
+      throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+    }
     ids.push(embeddedRecord.id);
   });
 
@@ -238,7 +242,11 @@ function extractEmbeddedHasManyPolymorphic(serializer,store, key, hash) {
     
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
-    store.push(embeddedType, embeddedRecord);
+    try {
+      store.push(embeddedType, embeddedRecord);
+    } catch (e) {
+      throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+    }
     ids.push({ id: embeddedRecord[primaryKey], type: typeKey });
   });
 
@@ -254,7 +262,13 @@ function extractEmbeddedBelongsTo(serializer, store, key, embeddedType, hash) {
   // var embeddedSerializer = store.serializerFor(embeddedType.typeKey);
   var embeddedSerializer = serializer;
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, hash[key], null);
-  store.push(embeddedType, embeddedRecord);
+  
+  try {
+    store.push(embeddedType, embeddedRecord);
+  } catch (e) {
+    throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+  }
+  
   hash[key] = embeddedRecord.id;
   //TODO Need to add a reference to the parent later so relationship works between both `belongsTo` records
   return hash;
@@ -273,7 +287,11 @@ function extractEmbeddedBelongsToPolymorphic(serializer, store, key, hash) {
   var primaryKey = get(embeddedSerializer, 'primaryKey');
 
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
-  store.push(embeddedType, embeddedRecord);
+  try {
+    store.push(embeddedType, embeddedRecord);
+  } catch (e) {
+    throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+  }
 
   hash[key] = embeddedRecord[primaryKey];
   hash['type'] = typeKey;

@@ -1,6 +1,6 @@
 {
   "name": "ember-cli-couchdb",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Couchdb adapters for Ember.js app",
   "directories": {
     "doc": "doc",
