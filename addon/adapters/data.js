@@ -97,11 +97,11 @@ export default DS.RESTAdapter.extend({
     return Ember.assert(`Please do not call find() for ${type.typeKey} instead pass keys or startkey & endkey pair`, false);
   },
 
-  findQuery: function(store, type, query) {
+  query: function(store, type, query) {
     if (this.sortQueryParams) {
       query = this.sortQueryParams(query);
     }
-    var url = this.buildURL(type, null,null,'findQuery', query);
+    var url = this.buildURL(type, null,null,'query', query);
     type = query.type || 'GET';
     delete query.type;
     return this.ajax(url, type, query);
