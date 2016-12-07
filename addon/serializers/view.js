@@ -17,7 +17,6 @@ export default DataSerializer.extend({
     return this._super(store, primaryType, _payload, true);
   },
   _getRowId: function(row) {
-    console.log('BROOOO',btoa(JSON.stringify(row.key)));
     return btoa(JSON.stringify(row.key));
   }
 });
