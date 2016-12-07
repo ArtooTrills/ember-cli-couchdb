@@ -3,10 +3,10 @@ import DataSerializer from './data';
 
 export default DataSerializer.extend({
   isNewSerializerAPI: true,
-  normalizeArrayResponse: function(store, primaryType, payload) {
+  normalizeArrayResponse: function(store, primaryModelClass, payload, id, requestType) {
     var that = this;
     var _payload = {};
-    var _rootKey = Ember.String.pluralize(primaryType.modelName);
+    var _rootKey = Ember.String.pluralize(primaryModelClass.modelName);
     _payload[_rootKey] = (payload.rows || []).map(function (row) {
       row.id = that._getRowId(row);
       return that.addIds(row);
@@ -14,7 +14,7 @@ export default DataSerializer.extend({
     if(payload['meta']){
       _payload['meta'] = payload['meta'];
     }
-    return this._super(store, primaryType, _payload, true);
+    return this._super(store, primaryModelClass, _payload, id, requestType);
   },
   _getRowId: function(row) {
     return btoa(JSON.stringify(row.key));
