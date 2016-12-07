@@ -11,37 +11,52 @@ const {
 } = Ember.EnumerableUtils;
 
 var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
-  primaryKey: "_id",
-
-  normalize: function(typeClass, hash, prop) {
-    // var normalizedHash = this._super(type, hash, prop);
-
-    this.normalizeId(hash,typeClass);
-    this.normalizeAttributes(typeClass, hash);
-    this.normalizeRelationships(typeClass, hash);
-
-    this.normalizeUsingDeclaredMapping(typeClass, hash);
-
+  primaryKey: 'id',
+  isNewSerializerAPI: true,
+  normalize:function(modelClass, resourceHash, prop){
     if (this.normalizeHash && this.normalizeHash[prop]) {
-      Ember.deprecate('`RESTSeri  zalizer.normalizeHash` has been deprecated. Please use `serializer.normalize` to modify the payload of single resources.', false, {
+      Ember.deprecate('`RESTSerializer.normalizeHash` has been deprecated. Please use `serializer.normalize` to modify the payload of single resources.', false, {
         id: 'ds.serializer.normalize-hash-deprecated',
         until: '2.0.0'
       });
-      this.normalizeHash[prop](hash);
+      this.normalizeHash[prop](resourceHash);
     }
+    if (resourceHash) {
+      this.normalizeUsingDeclaredMapping(modelClass, resourceHash);
 
-    this.applyTransforms(typeClass, hash);
+    var data = {
+        id: this.extractId(modelClass, resourceHash),
+        type: modelClass.modelName,
+        attributes: this.extractAttributes(modelClass, resourceHash),
+        relationships: this.extractRelationships(modelClass, resourceHash)
+      };
 
-    return extractEmbeddedRecords(this, this.store, typeClass, hash);
+      this.applyTransforms(modelClass, data.attributes);
+    }
+    return this.newExtractEmbeddedRecords(this, this.store, modelClass, {data:data});
   },
+  newExtractEmbeddedRecords:function(serializer, store, typeClass, partial) {
+    var _this2 = this;
 
+    typeClass.eachRelationship(function (key, relationship) {
+      if (serializer.hasDeserializeRecordsOption(key)) {
+        if (relationship.kind === "hasMany") {
+          _this2._extractEmbeddedHasMany(store, key, partial, relationship);
+        }
+        if (relationship.kind === "belongsTo") {
+          _this2._extractEmbeddedBelongsTo(store, key, partial, relationship);
+        }
+      }
+    }, this);
+    return partial;
+  },
   hasEmbeddedAlwaysOption: function() {
     return true;
   },
   normalizeId: function(hash,typeClass) {
-    Ember.Logger.assert(hash && (hash.id || hash._id), `Received invalid data for type ${Ember.String.dasherize(typeClass.typeKey)})`);
+    Ember.Logger.assert(hash && (hash.id || hash._id), `Received invalid data for type ${Ember.String.dasherize(typeClass.modelName)})`);
     if (!hash && !(hash.id  || hash._id)) {
-      Ember.onerror(`Received invalid data for type ${Ember.String.dasherize(typeClass.typeKey)}`);
+      Ember.onerror(`Received invalid data for type ${Ember.String.dasherize(typeClass.modelName)}`);
     }
     hash.id = hash._id || hash.id;
     delete hash._id;
@@ -49,7 +64,7 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
 
   extractSingle: function(store, primaryType, rawPayload, recordId) {
     var payload = {};
-    var primaryTypeName = primaryType.typeKey;
+    var primaryTypeName = primaryType.modelName;
     payload[primaryTypeName] = this.addIds(rawPayload);
 
     return this._super(store, primaryType, payload, recordId);
@@ -58,7 +73,7 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
   extractArray: function (store, primaryType, payload) {
     var that = this;
     var _payload = {};
-    var _rootKey = Ember.String.pluralize(primaryType.typeKey);
+    var _rootKey = Ember.String.pluralize(primaryType.modelName);
     
     // Check to prevent overriding payload if serializer are extending data serializer.
     if(!payload[_rootKey]){
@@ -104,23 +119,10 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
   },
 
   extractMeta: function(store, type, payload) {
-    if (payload) {
-      var meta = payload.meta || {};
-      if (payload.total_rows) {
-        meta.total_rows = payload.total_rows;
-      }
-      if (payload.offset) {
-        meta.offset = payload.offset;
-      }
-      if(typeof type === 'string'){
-        store.setMetadataFor(type, meta);
-      }
-      else{
-        store.setMetadataFor(type.typeKey, meta);
-      }
+    if (payload && payload.hasOwnProperty('meta')) {
+      var meta = payload.meta;
       delete payload.meta;
-      delete payload.total_rows;
-      delete payload.offset;
+      return meta;
     }
   },
 
@@ -180,7 +182,7 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
   },
 
   serializePolymorphicType: function(snapshot, json/*, relationship*/) {
-    return json.type = Ember.String.underscore(snapshot.constructor.typeKey);
+    return json.type = Ember.String.underscore(snapshot.constructor.modelName);
   }
 });
 
@@ -220,14 +222,14 @@ function extractEmbeddedHasMany(serializer, store, key, embeddedType, hash) {
 
   var ids = [];
 
-  // var embeddedSerializer = store.serializerFor(embeddedType.typeKey);
+  // var embeddedSerializer = store.serializerFor(embeddedType.modelName);
   forEach(hash[key], function(data) {
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
     try {
-      store.push(embeddedType.typeKey, embeddedRecord);
+      store.push(embeddedType.modelName, embeddedRecord);
     } catch (e) {
-      throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+      throw new TypeError(`Invalid data received for type: ${embeddedType.modelName}`);
     }
     ids.push(embeddedRecord.id);
   });
@@ -244,19 +246,19 @@ function extractEmbeddedHasManyPolymorphic(serializer,store, key, hash) {
   var ids = [];
 
   forEach(hash[key], function(data) {
-    var typeKey = data.type;
-    var embeddedSerializer = store.serializerFor(typeKey);
-    var embeddedType = store.modelFor(typeKey);
+    var modelName = data.type;
+    var embeddedSerializer = store.serializerFor(modelName);
+    var embeddedType = store.modelFor(modelName);
     var primaryKey = get(embeddedSerializer, 'primaryKey');
     
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
     try {
-      store.push(embeddedType.typeKey, embeddedRecord);
+      store.push(embeddedType.modelName, embeddedRecord);
     } catch (e) {
-      throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+      throw new TypeError(`Invalid data received for type: ${embeddedType.modelName}`);
     }
-    ids.push({ id: embeddedRecord[primaryKey], type: typeKey });
+    ids.push({ id: embeddedRecord[primaryKey], type: modelName });
   });
 
   hash[key] = ids;
@@ -268,14 +270,14 @@ function extractEmbeddedBelongsTo(serializer, store, key, embeddedType, hash) {
     return hash;
   }
 
-  // var embeddedSerializer = store.serializerFor(embeddedType.typeKey);
+  // var embeddedSerializer = store.serializerFor(embeddedType.modelName);
   var embeddedSerializer = serializer;
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, hash[key], null);
   
   try {
-    store.push(embeddedType.typeKey, embeddedRecord);
+    store.push(embeddedType.modelName, embeddedRecord);
   } catch (e) {
-    throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+    throw new TypeError(`Invalid data received for type: ${embeddedType.modelName}`);
   }
   
   hash[key] = embeddedRecord.id;
@@ -289,21 +291,21 @@ function extractEmbeddedBelongsToPolymorphic(serializer, store, key, hash) {
   }
 
   var data = hash[key];
-  var typeKey = data.type;
-  // var embeddedSerializer = store.serializerFor(typeKey);
+  var modelName = data.type;
+  // var embeddedSerializer = store.serializerFor(modelName);
   var embeddedSerializer = serializer;
-  var embeddedType = store.modelFor(typeKey);
+  var embeddedType = store.modelFor(modelName);
   var primaryKey = get(embeddedSerializer, 'primaryKey');
 
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
   try {
-    store.push(embeddedType.typeKey, embeddedRecord);
+    store.push(embeddedType.modelName, embeddedRecord);
   } catch (e) {
-    throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
+    throw new TypeError(`Invalid data received for type: ${embeddedType.modelName}`);
   }
 
   hash[key] = embeddedRecord[primaryKey];
-  hash['type'] = typeKey;
+  hash['type'] = modelName;
   return hash;
 }
 
