@@ -13,31 +13,35 @@ const {
 var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
   primaryKey: "_id",
 
-  normalize: function(type, hash, prop) {
+  normalize: function(typeClass, hash, prop) {
     // var normalizedHash = this._super(type, hash, prop);
 
-    this.normalizeId(hash, type);
-    this.normalizeAttributes(type, hash);
-    this.normalizeRelationships(type, hash);
+    this.normalizeId(hash,typeClass);
+    this.normalizeAttributes(typeClass, hash);
+    this.normalizeRelationships(typeClass, hash);
 
-    this.normalizeUsingDeclaredMapping(type, hash);
+    this.normalizeUsingDeclaredMapping(typeClass, hash);
 
     if (this.normalizeHash && this.normalizeHash[prop]) {
+      Ember.deprecate('`RESTSeri  zalizer.normalizeHash` has been deprecated. Please use `serializer.normalize` to modify the payload of single resources.', false, {
+        id: 'ds.serializer.normalize-hash-deprecated',
+        until: '2.0.0'
+      });
       this.normalizeHash[prop](hash);
     }
 
-    this.applyTransforms(type, hash);
+    this.applyTransforms(typeClass, hash);
 
-    return extractEmbeddedRecords(this, this.store, type, hash);
+    return extractEmbeddedRecords(this, this.store, typeClass, hash);
   },
 
   hasEmbeddedAlwaysOption: function() {
     return true;
   },
-  normalizeId: function(hash, type={}) {
-    Ember.Logger.assert(hash && (hash.id || hash._id), `Received invalid data for type ${Ember.String.dasherize(type.typeKey)})`);
+  normalizeId: function(hash,typeClass) {
+    Ember.Logger.assert(hash && (hash.id || hash._id), `Received invalid data for type ${Ember.String.dasherize(typeClass.typeKey)})`);
     if (!hash && !(hash.id  || hash._id)) {
-      Ember.onerror(`Received invalid data for type ${Ember.String.dasherize(type.typeKey)}`);
+      Ember.onerror(`Received invalid data for type ${Ember.String.dasherize(typeClass.typeKey)}`);
     }
     hash.id = hash._id || hash.id;
     delete hash._id;
@@ -108,7 +112,12 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
       if (payload.offset) {
         meta.offset = payload.offset;
       }
-      store.setMetadataFor(type, meta);
+      if(typeof type === 'string'){
+        store.setMetadataFor(type, meta);
+      }
+      else{
+        store.setMetadataFor(type.typeKey, meta);
+      }
       delete payload.meta;
       delete payload.total_rows;
       delete payload.offset;
@@ -136,7 +145,7 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
   serializeHasMany: function(snapshot, json, relationship) {
     var key = relationship.key;
     var serializer = this;
-    var relationshipType = snapshot.constructor.determineRelationshipType(relationship);  
+    var relationshipType = snapshot.constructor.determineRelationshipType(relationship,serializer.store);  
     if (relationshipType === 'manyToNone' || relationshipType === 'manyToMany') {
       if (snapshot.get(`${key}.length`) > 0) {
         return json[key] = snapshot.get(key).map(function(row) {
@@ -177,11 +186,11 @@ var DataSerializer = DS.RESTSerializer.extend(DS.EmbeddedRecordsMixin, {
 
 // chooses a relationship kind to branch which function is used to update payload
 // does not change payload if attr is not embedded
-function extractEmbeddedRecords(serializer, store, type, partial) {
+function extractEmbeddedRecords(serializer, store, typeClass, partial) {
 
-  type.eachRelationship(function(key, relationship) {
+  typeClass.eachRelationship(function(key, relationship) {
     if (serializer.hasDeserializeRecordsOption(key)) {
-      var embeddedType = store.modelFor(relationship.type.typeKey);
+      var embeddedType = store.modelFor(relationship.type);
       if (relationship.kind === "hasMany") {
         if (relationship.options.polymorphic) {
           extractEmbeddedHasManyPolymorphic(serializer,store, key, partial);
@@ -216,7 +225,7 @@ function extractEmbeddedHasMany(serializer, store, key, embeddedType, hash) {
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
     try {
-      store.push(embeddedType, embeddedRecord);
+      store.push(embeddedType.typeKey, embeddedRecord);
     } catch (e) {
       throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
     }
@@ -243,7 +252,7 @@ function extractEmbeddedHasManyPolymorphic(serializer,store, key, hash) {
     // var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
     var embeddedRecord = serializer.normalize(embeddedType, data, null);
     try {
-      store.push(embeddedType, embeddedRecord);
+      store.push(embeddedType.typeKey, embeddedRecord);
     } catch (e) {
       throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
     }
@@ -264,7 +273,7 @@ function extractEmbeddedBelongsTo(serializer, store, key, embeddedType, hash) {
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, hash[key], null);
   
   try {
-    store.push(embeddedType, embeddedRecord);
+    store.push(embeddedType.typeKey, embeddedRecord);
   } catch (e) {
     throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
   }
@@ -288,7 +297,7 @@ function extractEmbeddedBelongsToPolymorphic(serializer, store, key, hash) {
 
   var embeddedRecord = embeddedSerializer.normalize(embeddedType, data, null);
   try {
-    store.push(embeddedType, embeddedRecord);
+    store.push(embeddedType.typeKey, embeddedRecord);
   } catch (e) {
     throw new TypeError(`Invalid data received for type: ${embeddedType.typeKey}`);
   }

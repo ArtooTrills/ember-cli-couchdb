@@ -37,7 +37,7 @@ export default DS.RESTAdapter.extend({
     return `_design/${category}/_view/${view}`;
   },
   
-  buildURL: function(type, id, snapshot, query) {
+  buildURL: function(type, id, snapshot,requestType, query) {
     let category, key, value, view;
     let namespace = this.get('namespace') || '';
     let host = this.get('host') || `${window.location.protocol}\/\/${window.location.host}`;
@@ -97,11 +97,11 @@ export default DS.RESTAdapter.extend({
     return Ember.assert(`Please do not call find() for ${type.typeKey} instead pass keys or startkey & endkey pair`, false);
   },
 
-  findQuery: function(store, type, query) {
+  query: function(store, type, query) {
     if (this.sortQueryParams) {
       query = this.sortQueryParams(query);
     }
-    var url = this.buildURL(type, null,null, query);
+    var url = this.buildURL(type, null,null,'query', query);
     type = query.type || 'GET';
     delete query.type;
     return this.ajax(url, type, query);
